@@ -32,6 +32,14 @@ fi
 if [ "$renew_needed" = true ]; then
   echo "Generating new certificate for $DNS_NAME"
   tailscale cert --cert-file="$CERT_FILE" --key-file="$KEY_FILE" "$DNS_NAME"
+  # Reload Apache to ensure it picks up the new certificate
+  if systemctl list-units --full -all | grep -Fq apache2.service; then
+    systemctl reload apache2
+  elif systemctl list-units --full -all | grep -Fq httpd.service; then
+    systemctl reload httpd
+  else
+    echo "Apache service not found; skipping reload" >&2
+  fi
 else
   echo "Certificate for $DNS_NAME is valid for $DAYS_LEFT days."
 fi
